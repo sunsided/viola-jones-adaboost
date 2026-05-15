@@ -1,0 +1,72 @@
+# Taskfile.dist.yaml
+# Tasks for managing the Viola-Jones AdaBoost project environment
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  default:
+    cmd: task --list
+
+  check:conda:
+    internal: true
+    silent: true
+    cmds:
+      - |
+        if ! command -v conda &> /dev/null; then
+          echo "ERROR: conda is not installed."
+          echo ""
+          echo "To install Miniconda:"
+          echo "  Linux:   wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && bash Miniconda3-latest-Linux-x86_64.sh"
+          echo "  macOS:   brew install miniconda  OR  https://docs.conda.io/en/latest/miniconda.html"
+          echo "  Windows: https://docs.conda.io/en/latest/miniconda.html"
+          echo ""
+          echo "After installation, restart your terminal or run: source ~/.bashrc (or ~/.zshrc)"
+          exit 1
+        fi
+
+
+
+  env:create:
+    desc: Create the miniconda environment from environment.yaml
+    deps:
+      - check:conda
+    cmds:
+      - conda env create -f environment.yaml
+    status:
+      - conda run -n viola-jones python --version 2>/dev/null
+
+  env:remove:
+    desc: Remove the miniconda environment
+    deps:
+      - check:conda
+    cmds:
+      - conda env remove -n viola-jones --yes
+    status:
+      - "! conda run -n viola-jones python --version 2>/dev/null"
+
+  jupyter:
+    desc: Start the Jupyter Notebook server
+    deps:
+      - check:conda
+      - env:create
+    cmds:
+      - echo "Starting Jupyter with environment 'viola-jones'..."
+      - conda run -n viola-jones jupyter notebook
+
+  env:update:
+    desc: Update the conda environment when environment.yaml changes
+    deps:
+      - check:conda
+    cmds:
+      - conda env update -f environment.yaml --prune
+
+  env:activate:
+    desc: Open a shell with the conda environment activated
+    deps:
+      - check:conda
+      - env:create
+    cmds:
+      - echo "Starting shell with 'viola-jones' environment activated..."
+      - echo "Type 'exit' to leave the environment."
+      - conda run -n viola-jones bash
